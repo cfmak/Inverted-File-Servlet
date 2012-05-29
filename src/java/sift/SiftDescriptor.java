@@ -5,6 +5,8 @@
 package sift;
 
 import imageCommon.Keypoint;
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Vector;
 /**
@@ -62,7 +64,7 @@ public class SiftDescriptor {
     
     public SiftDescriptor()
     {
-        desc = new float[128];
+        desc = new float[LengthInFloats()];
         hamming = new int[2];
     }
     
@@ -178,6 +180,21 @@ public class SiftDescriptor {
         }
     }
     
+    
+    //return desc as a byte array
+    public byte[] toBytes()
+    {
+        byte[] bytes = new byte[Float.SIZE/8*128];
+        int i=0;
+        for (float f : desc) 
+        {
+            byte[] tmp = ByteBuffer.allocate(4).putFloat(f).array();
+            for(int j=0;j<4;j++)
+                bytes[i++] = tmp[j];
+        }
+        return bytes;
+    }
+    
     public String toString()
     {
         String s="";
@@ -186,6 +203,16 @@ public class SiftDescriptor {
             s = desc[i]+", "+s;
         }
         return s;
+    }
+    
+    public static int LengthInFloats()
+    {
+        return 128;
+    }
+    
+    public static int LengthInBytes()
+    {
+        return LengthInFloats()*Float.SIZE/8;
     }
     
     public Object clone()

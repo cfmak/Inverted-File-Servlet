@@ -86,7 +86,7 @@ public class InvertedFile {
     }
     
     //return the closest codeword (which satisfies hamming embedding) nearest to the query
-    public SiftDescriptor NearesrNeighbor(SiftDescriptor query)
+    public SiftDescriptor NearestNeighbor(SiftDescriptor query)
     {
         Set<SiftDescriptor> keys = map.keySet();
         Object[] arr = keys.toArray();
@@ -133,7 +133,7 @@ public class InvertedFile {
         HashMap<Integer, Integer> score = new HashMap<Integer, Integer>();
         for(int i=0;i<query.length;i++)
         {
-            SiftDescriptor codeword = NearesrNeighbor(query[i]);
+            SiftDescriptor codeword = NearestNeighbor(query[i]);
             
             Vector<ImageEntry> ie = get(codeword);
             for(int j=0;j<ie.size();j++)
