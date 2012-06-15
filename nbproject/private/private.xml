@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
+        <file>file:/Users/cfmak/workspace/InvertedFile/src/java/fs/FileSystem.java</file>
+        <file>file:/Users/cfmak/workspace/InvertedFile/src/java/fs/FileSystemConfig.java</file>
+        <file>file:/Users/cfmak/workspace/InvertedFile/src/java/ifs/InvertedFile.java</file>
+        <file>file:/Users/cfmak/workspace/InvertedFile/src/java/InvertedFileServlet.java</file>
+        <file>file:/Users/cfmak/workspace/InvertedFile/src/java/ifs/InvertedFileHBase.java</file>
+        <file>file:/Users/cfmak/workspace/InvertedFile/src/java/ifs/ImageEntryWritable.java</file>
+    </open-files>
 </project-private>

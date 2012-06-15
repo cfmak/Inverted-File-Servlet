@@ -30,6 +30,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import javax.servlet.http.*;
 import javax.servlet.*;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
 
 /**
  *
@@ -53,17 +55,39 @@ public class InvertedFileServlet extends HttpServlet {
         super.init(config);
 
         sc = config.getServletContext();
-        fs = new FileSystem(sc);
-        ifs = new InvertedFile();
-//        BufferedImage img = fs.ReadLocalImageFile("/images/IMG_0183.JPG");
-//        if(img!=null)
-//            ifs.putBufferedImage(img, 256);
-        fs.PutLocalDirectory(ifs, 256, "/images", true);
+        //fs = new FileSystem(sc);
         
-        //ReadTestImage();        
+        Configuration conf = HBaseConfiguration.create();
+        //conf.set("hbase.zookeeper.quorum", "localhost");  // Here we are running zookeeper locally
+        conf.set("hbase.master", "localhost");
+        conf.set("cluster_table_name", "cluster_table_20");
+        
+        //for HBase setting
+//        FileSystemConfig fsconf = new FileSystemConfig(conf,sc,false);
+//        fs = new FileSystem(fsconf);
+//        ifs = new InvertedFile();
+//        try {
+//            fs.GetDBImageFile("4e6c8e63-2706-43a0-b617-f023b3028fdf");
+////            fs.PutLocalDirectory(ifs, 256, "/images", true);
+//        } catch (IOException ex) {
+//            Logger.getLogger(InvertedFileServlet.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+        
+        
+        //for local setting
+        FileSystemConfig fsconf = new FileSystemConfig(conf,sc,true);
+        fs = new FileSystem(fsconf);
+        ifs = new InvertedFileHBase(fsconf);
+        try {
+//            fs.GetDBImageFile("4e6c8e63-2706-43a0-b617-f023b3028fdf");
+//            fs.PutLocalDirectory(ifs, 256, "/images", true);
+            ((InvertedFileHBase)ifs).ReadInvertedFile();
+        } catch (IOException ex) {
+            Logger.getLogger(InvertedFileServlet.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
-    public void ReadTestImage()
+    public void ReadTestImage() throws IOException
     {
         int imageSize = 256;
         BufferedImage img = fs.ReadLocalImageFile("/images/IMG_0183.JPG");
@@ -125,6 +149,17 @@ public class InvertedFileServlet extends HttpServlet {
         }
     }
     
+//    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+//            throws ServletException, IOException 
+//    {
+//        response.setHeader("Content-Type", "text/javascript; charset=utf8");
+//        PrintWriter out = response.getWriter();
+//        
+////        byte[] img = fs.GetDBImageFile("4e6c8e63-2706-43a0-b617-f023b3028fdf");
+////        System.out.println(img);
+////        out.write(img.toString());
+//    }
+    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException 
     {
@@ -168,12 +203,14 @@ public class InvertedFileServlet extends HttpServlet {
         queryBase64Str = StringUtils.replaceChars(queryBase64Str, "-_", "+/");
         byte[] query = Base64.decodeBase64(queryBase64Str);
         
-        //check query length
-        if(query.length != SiftDescriptor.LengthInBytes() * 9)
+        //check query byte length
+        if(query.length % SiftDescriptor.SiftLengthInBytes() != 0)
         {
             out.print("{}");
             return;
         }
+        //pass the test
+        int nDesc = query.length / SiftDescriptor.SiftLengthInBytes();
 //        byte[] query = Base64.decodeBase64(testcodebase64str);
         
         //Make query => 9 Sift Descriptors
@@ -181,8 +218,8 @@ public class InvertedFileServlet extends HttpServlet {
         FloatBuffer fb = ((ByteBuffer) bb.rewind()).asFloatBuffer();
         
         float[] arr = new float[128];
-        SiftDescriptor[] desc = new SiftDescriptor[9];
-        for(int j=0;j<9;j++)
+        SiftDescriptor[] desc = new SiftDescriptor[nDesc];
+        for(int j=0;j<nDesc;j++)
         {
             fb.get(arr, 0, 128);
             desc[j] = new SiftDescriptor(arr);
@@ -192,18 +229,15 @@ public class InvertedFileServlet extends HttpServlet {
 
         int id = ifs.Query(desc);
         
-        //output jsonp
-//        if(callback != null)
-//            out.println(callback+"(");
         //output json (very strict, no newline, no extra comma)
-        out.print("[{ \"dataset\":[");
+        out.print("[");
+        out.print("{ \"dataset\":[");
         Object[] keys = fs.map.keySet().toArray();
         for(int i=0;i<keys.length;i++)
         {
             out.print("{\""+keys[i]+"\":\""+fs.map.get(keys[i])+"\"}");
             if(i<keys.length-1)
                 out.print(",");
-//            out.println("<br>");
         }
         out.print("]},");
         out.print("{\"result\":"+id+"}");

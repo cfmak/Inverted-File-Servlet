@@ -4,21 +4,27 @@
  */
 package sift;
 
-import imageCommon.Keypoint;
-import java.io.ByteArrayOutputStream;
+import ifs.ImageEntryWritable;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.Collections;
 import java.util.Vector;
+import org.apache.hadoop.io.WritableComparable;
+
 /**
  *
  * @author cfmak
  */
-public class SiftDescriptor {
+public class SiftDescriptor{
     public float[] desc;
     public int[] hamming;
     
     //hamming embedding projection matrix
-    private static float[][] P = 
+    protected static float[][] P = 
     {
         {-0.0848110460278616f, 0.0765073108871147f, 0.0292664724960910f, 0.0752806154525195f, -0.0468520097284721f, -0.0143628774365769f, 0.0950082867393525f, -0.0200759059887029f, -0.0489405516298801f, 0.0507536767714573f, -0.0879943858152553f, -0.0451874481042764f, 0.0179326794503419f, -0.0294763666103589f, 0.154036807028545f, 0.0367670490382283f, -0.0214237484422629f, -0.138395990201333f, 0.0102713209329485f, 0.106291979438282f, -0.0475212087153775f, 0.178045846404345f, 0.00133354354312909f, -0.0315311147970924f, -0.0834521441953699f, 0.0770704977173633f, 0.122124645820093f, -0.0730382380992745f, -0.0510292736332439f, -0.0287075220955570f, -0.0862026167471705f, 0.00910104435783879f, -0.00401666846807272f, 0.0803201015226057f, 0.0797983135265458f, 0.0272709120892244f, -0.0159628639587538f, 0.0507357011726030f, -0.0845060886874888f, 0.0246429605087704f, -0.0257205365487672f, 0.161068349471933f, 0.124208848034477f, 0.0647026004546922f, -0.0744978519248916f, 0.0487318237992978f, -0.0916282290723158f, 0.0229617790044174f, -0.0902098707785444f, 0.0655004810357230f, 0.0310462928899762f, -0.173198314209008f, 0.0410599843465478f, -0.0650433571565121f, -0.131056863526474f, -0.0449031693105854f, 0.0251538464549948f, 0.0297908215757037f, -0.0251091404056654f, 0.163476715921618f, 0.134739555040981f, -0.155041115731188f, -0.193646173006159f, 0.0988354727944109f, 0.0443458148940559f, -0.00499534298402177f, 0.0496494582830691f, 0.0367006645041626f, -0.0228163831413887f, -0.00510160573056469f, -0.0321840614742431f, -0.0511577830169930f, -0.0382232752561544f, -0.0686481881014787f, 0.0247411453425685f, 0.0956071888445135f, -0.137166363864800f, -0.0966492280900271f, 0.0126494967521873f, -0.0568538407511975f, -0.00879429581243163f, 0.127487889983819f, -0.121096006066360f, 0.115983811553525f, -0.0404684890519673f, -0.000611435719201759f, 0.153852482486464f, 0.0523687561314187f, 0.136146340506200f, -0.0454279809720174f, 0.0366340245740783f, -0.0557467880895000f, 0.0397709330514491f, -0.0747621344466230f, 0.0767180092894851f, 0.102581829637247f, -0.226295852722955f, 0.191363758345479f, 0.106742891415703f, -0.136502682576771f, -0.0244574908748720f, -0.0479982946538585f, 0.0127458002292505f, 0.000154704982907094f, -0.0343098626380350f, -0.0488040941967710f, 0.0639388076531496f, -0.117686479466450f, -0.0962203693323544f, -0.0483498743220998f, -0.0317863188459579f, 0.0914483229163467f, -0.189912401123951f, -0.118043691503578f, 0.131240996031244f, -0.0269532889508534f, -0.0281126514232000f, -0.0872439517974809f, -0.112323912663394f, -0.165303823642338f, 0.113260300471816f, -0.210499862717091f, 0.0233154448823776f, -0.106914292777960f, -0.0520100671660559f, 0.0739523794192519f, -0.0573775720438731f, 0.0677101921097601f},
         {-0.213896537966254f, -0.0925007875072133f, 0.0872835749028075f, -0.0239672499120732f, -0.140964294462029f, 0.0299863542434174f, -0.0608556441030875f, 0.0475922646172944f, -0.0759931071043102f, -0.0908188837362684f, 0.0494116549680450f, -0.0754061697945962f, -0.128623457529014f, -0.0759119763807363f, -0.0360831111791564f, 0.0605126961385431f, 0.0628577261827231f, 0.0120584784167595f, -0.138907877397655f, 0.124891409950187f, -0.0567201990228928f, 0.0631346930306528f, -0.0136678059353253f, 0.0175414087544704f, -0.0532259551629311f, 0.0273862172127005f, 0.0162824191109401f, -0.0553026436730927f, -0.143183316409472f, 0.0535077527131803f, 0.100977250280443f, -0.162227825400114f, -0.0630959945627922f, 0.0668384804173193f, 0.00235856211792261f, -0.0652444591291878f, -0.0899201964095369f, -0.0401140477880760f, -0.0429381048816840f, 0.129210337879108f, -0.0823936680728382f, -0.00344182171199856f, -0.0735602842858628f, -0.0460037218807638f, 0.0267808126529557f, 0.00562691207602003f, -0.0123061959786988f, 0.00796565954850128f, -7.96763830619718e-05f, -0.0326884281786890f, 0.0787278365108260f, 0.148560584416005f, 0.0484153835566372f, -0.00291725986862817f, 0.0841723979678334f, -0.0435730699578950f, -0.00843848262987965f, 0.143478721319919f, 0.0952410543101760f, 0.0447847336208437f, -0.0320464934203034f, -0.0989233384196814f, 0.151058018395549f, -0.0218553577353778f, 0.0213301982300172f, 0.105410714551098f, -0.214618740990087f, 0.145401914507998f, -0.0585616968164960f, 0.0327392512783431f, 0.0944795747422237f, 0.0634732168427018f, 0.0403624048890575f, 0.0830780786886405f, -0.0740256798105450f, 0.177094445287459f, -0.0703871866944863f, 0.0890941199315253f, -0.0735909082258227f, 0.0877074822878833f, 0.102529435148168f, -0.0364724576219792f, -0.0417120975991963f, -0.112332019888086f, 0.0105810568402145f, -0.0966188097500166f, 0.0554735724140840f, -0.118612788380958f, -0.0381909629429601f, -0.0679283687362444f, 0.0145893674180833f, 0.186500351468846f, -0.0870162066840630f, -0.0740853145461793f, -0.0608254271757017f, 0.0614002128087267f, -0.209265337652719f, -0.0119817316076140f, 0.0606472075898561f, -0.171414392341913f, -0.0440074881703530f, -0.0443481380210395f, -0.00509453077594876f, -0.0637950005554008f, -0.0115926173875672f, -0.0679015053515404f, -0.166811739672977f, -0.0411842142246985f, 0.142507959726653f, -0.220332657182103f, 0.137796587531883f, -0.0442982178469283f, 0.0624360932313776f, -0.0864236095095362f, 0.100268697541581f, 0.0392249971669793f, 0.123737443701903f, 0.0242126768498498f, 0.0772754300137016f, -0.0721519883680340f, 0.00719105724614428f, 0.0677672348002045f, -0.0164358323150951f, 0.151558720118494f, 0.0880867328770045f, -0.0109607569169405f, 0.0827821810699228f, 0.0374573479481490f},
@@ -64,16 +70,35 @@ public class SiftDescriptor {
     
     public SiftDescriptor()
     {
-        desc = new float[LengthInFloats()];
+        desc = new float[SiftLength()];
         hamming = new int[2];
     }
     
-    public SiftDescriptor(float[] arr)
+    public SiftDescriptor(SiftDescriptor other)
     {
-        desc = arr.clone();
+        desc = other.desc.clone();
+        hamming = other.hamming.clone();
+    }
+    
+    public SiftDescriptor(float[] sift)
+    {
+        desc = sift.clone();
         
         hamming = new int[2];
         HammingEmbedding();
+    }
+    
+    public SiftDescriptor(byte[] b) throws IOException
+    {
+        desc = new float[SiftLength()];
+        hamming = new int[2];
+        fromBytes(b);
+    }
+    
+    public Object clone()
+    {
+        SiftDescriptor tmp = new SiftDescriptor(this);
+        return tmp;
     }
     
     //blockx - 0 to 16
@@ -121,6 +146,25 @@ public class SiftDescriptor {
             {
                 desc[i] /= norm;
             }
+        }
+    }
+    
+    //to calculate Kmean
+    public void accumulate(SiftDescriptor other)
+    {
+        for(int i=0;i<SiftLength();i++)
+        {
+            desc[i] += other.desc[i];
+        }
+    }
+    
+    //to calculate Kmean
+    //remember to recalculate hamming afterwards
+    public void divide(float f)
+    {
+        for(int i=0;i<SiftLength();i++)
+        {
+            desc[i] = desc[i]/f;
         }
     }
     
@@ -181,10 +225,10 @@ public class SiftDescriptor {
     }
     
     
-    //return desc as a byte array
+    //return desc and hamming as a byte array
     public byte[] toBytes()
     {
-        byte[] bytes = new byte[Float.SIZE/8*128];
+        byte[] bytes = new byte[TotalLengthInBytes()];
         int i=0;
         for (float f : desc) 
         {
@@ -192,7 +236,24 @@ public class SiftDescriptor {
             for(int j=0;j<4;j++)
                 bytes[i++] = tmp[j];
         }
+        for (int f : hamming) 
+        {
+            byte[] tmp = ByteBuffer.allocate(4).putInt(f).array();
+            for(int j=0;j<4;j++)
+                bytes[i++] = tmp[j];
+        }
         return bytes;
+    }
+    
+    public void fromBytes(byte[] b) throws IOException
+    {
+        if(b.length != TotalLengthInBytes())
+            throw new IOException("fromBytes - wrong length of input byte[] b");
+        ByteBuffer bb = ByteBuffer.wrap(b);
+        FloatBuffer fb = ((ByteBuffer) bb.rewind()).asFloatBuffer();
+        fb.get(desc, 0, 128);
+        IntBuffer ib = bb.asIntBuffer();
+        ib.get(hamming, 0, 2);
     }
     
     public String toString()
@@ -205,23 +266,30 @@ public class SiftDescriptor {
         return s;
     }
     
-    public static int LengthInFloats()
+    public static int TotalLengthInBytes()
+    {
+        return SiftLengthInBytes() + HammingLengthInBytes();
+    }
+    
+    //Descriptor length excluding hamming embedding in Floats
+    public static int SiftLength()
     {
         return 128;
     }
     
-    public static int LengthInBytes()
+    //Descriptor length excluding hamming embedding in bytes
+    public static int SiftLengthInBytes()
     {
-        return LengthInFloats()*Float.SIZE/8;
+        return SiftLength()*Float.SIZE/8;
     }
     
-    public Object clone()
+    public static int HammingLength()
     {
-        SiftDescriptor tmp = new SiftDescriptor();
-        for(int i=0;i<desc.length;i++)
-        {
-            tmp.desc[i] = desc[i];
-        }
-        return tmp;
+        return 2;
+    }
+    
+    public static int HammingLengthInBytes()
+    {
+        return HammingLength()*Integer.SIZE/8;
     }
 }

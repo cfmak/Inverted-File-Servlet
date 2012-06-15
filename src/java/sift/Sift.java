@@ -58,9 +58,9 @@ public class Sift {
         return p / ((w+1)*(w+1));
     }
     
-    public static SiftDescriptor GetDescriptor(Keypoint kp, int[][] integralBoxImage)
+    public static SiftDescriptorWritable GetDescriptor(Keypoint kp, int[][] integralBoxImage)
     {
-        SiftDescriptor desc = new SiftDescriptor();
+        SiftDescriptorWritable desc = new SiftDescriptorWritable();
         
         int dSize = DescriptorSize[kp.lv];
         float scale = dSize/17.0f;
